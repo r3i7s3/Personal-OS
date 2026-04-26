@@ -214,7 +214,7 @@ function refreshEncouragement() {
             <span class="quick-icon">✍️</span>
             <span>写日记</span>
           </button>
-          <button class="quick-btn" @click="navigate('/timeline')">
+          <button class="quick-btn" @click="navigate('/todo')">
             <span class="quick-icon">🍅</span>
             <span>开始专注</span>
           </button>

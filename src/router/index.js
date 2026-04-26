@@ -26,9 +26,9 @@ const routes = [
     component: () => import('../views/ProjectView.vue')
   },
   {
-    path: '/timeline',
-    name: 'Timeline',
-    component: () => import('../views/TimelineView.vue')
+    path: '/feed',
+    name: 'Feed',
+    component: () => import('../views/AssetsView.vue') // 临时指向素材页，后续独立
   },
   {
     path: '/health',

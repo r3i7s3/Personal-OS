@@ -137,6 +137,10 @@ export const useTimelineStore = defineStore('timeline', {
       if (h < TL_START || h >= TL_END) return null
       return Math.round(((h - TL_START) + m / 60) * TL_HOUR_PX) + TL_TOP_PAD
     },
+
+    todayFocusMin(state) {
+      return state.blocks.reduce((sum, b) => sum + minsBetween(b.start, b.end), 0)
+    },
   },
 
   actions: {

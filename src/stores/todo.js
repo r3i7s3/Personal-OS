@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { db } from '../composables/db'
+import { useToastStore } from './toast'
 
 const TAGS = ['工作', '设计', '个人', '娱乐', '已完成']
 
@@ -140,7 +141,11 @@ export const useTodoStore = defineStore('todo', {
       const t = this.tasks.find(x => x.id === taskId)
       if (!t) return
       t.done = !t.done
-      if (t.done) this.expandedId = null
+      if (t.done) {
+        this.expandedId = null
+        // 触发鼓励 toast
+        try { useToastStore().onTaskDone() } catch {}
+      }
       this.save()
     },
 

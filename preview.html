@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal OS — UI Preview</title>
+<style>
+/* ═══ DESIGN TOKENS (from theme.css) ═══ */
+:root {
+  --bg0: #e2e2e8; --bg1: #ffffff; --bg2: #f5f5f7; --bg3: #e4e4e9; --bg4: #d8d8de;
+  --fg0: #1d1d1f; --fg1: #3a3a3c; --fg2: #6e6e73; --fg3: #b0b0b8;
+  --border: rgba(0,0,0,.07); --border2: rgba(0,0,0,.12); --border3: rgba(0,0,0,.2);
+  --sh: 0 1px 2px rgba(0,0,0,.04), 0 2px 8px rgba(0,0,0,.03);
+  --sh2: 0 2px 4px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.04), 0 16px 48px rgba(0,0,0,.02);
+  --r6: 6px; --r8: 8px; --r10: 10px; --r12: 12px; --r16: 16px;
+  --acc: #1a5fa8; --acc2: #124a88; --acc-dim: rgba(26,95,168,.1); --acc-text: #1a5fa8;
+  --acc-soft: #5ba3e0; --acc-soft-dim: rgba(91,163,224,.15);
+  --ok: #1a7f5a; --ok-bg: rgba(26,127,90,.1);
+  --warn: #8a5e00; --warn-bg: rgba(138,94,0,.1);
+  --danger: #c0392b; --danger-bg: rgba(192,57,43,.1);
+  --purple: #5e4db8; --purple-bg: rgba(94,77,184,.1);
+  --tomato: #e74c3c; --tomato-bg: rgba(231,76,60,.12);
+  --tag-bg: rgba(0,0,0,.055);
+}
+.theme-green {
+  --acc: #1e6b4a; --acc2: #155438; --acc-dim: rgba(30,107,74,.1); --acc-text: #1e6b4a;
+  --acc-soft: #52b788; --acc-soft-dim: rgba(82,183,136,.15);
+}
+.dark {
+  --bg0: #04060b; --bg1: #0f1520; --bg2: #1a2132; --bg3: #243048; --bg4: #2e3d5c;
+  --fg0: #ffffff; --fg1: #c8d0e4; --fg2: #6a7590; --fg3: #2e3850;
+  --border: #2a3348; --border2: #3a4a68; --border3: #4a5c80;
+  --sh: 0 1px 4px rgba(0,0,0,.5), 0 3px 12px rgba(0,0,0,.3);
+  --sh2: 0 2px 8px rgba(0,0,0,.6), 0 10px 32px rgba(0,0,0,.4), 0 20px 60px rgba(0,0,0,.2);
+  --acc: #5b7fd4; --acc2: #4a6bbf; --acc-dim: rgba(91,127,212,.12); --acc-text: #8aaae8;
+  --acc-soft: #8aaae8; --acc-soft-dim: rgba(138,170,232,.1);
+  --ok: #2aab80; --ok-bg: rgba(42,171,128,.1);
+  --warn: #a88a3a; --warn-bg: rgba(168,138,58,.1);
+  --danger: #d96348; --danger-bg: rgba(217,99,72,.1);
+  --purple: #8b72e0; --purple-bg: rgba(139,114,224,.1);
+  --tomato: #e05a4a; --tomato-bg: rgba(224,90,74,.15);
+  --tag-bg: rgba(255,255,255,.06);
+}
+
+/* ═══ RESET ═══ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg0); color: var(--fg0);
+  font-family: 'Noto Serif SC', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  font-size: 13px; line-height: 1.5; padding: 24px;
+}
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+
+/* ═══ PREVIEW CHROME ═══ */
+.preview-header { max-width: 1100px; margin: 0 auto 16px; }
+.preview-title { font-size: 15px; font-weight: 700; color: var(--fg0); }
+.preview-sub { font-size: 11px; color: var(--fg3); margin-top: 2px; }
+.theme-bar { display: flex; gap: 6px; margin-top: 10px; }
+.theme-btn {
+  padding: 5px 12px; border-radius: var(--r8); font-size: 11px;
+  border: 1px solid var(--border); background: var(--bg1); color: var(--fg1);
+  cursor: pointer; font-family: inherit; transition: all .12s;
+}
+.theme-btn.active { background: var(--acc); color: #fff; border-color: var(--acc); }
+.theme-btn.demo-btn { margin-left: auto; background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
+
+/* ═══ SHELL ═══ */
+.shell {
+  display: grid; grid-template-columns: 220px 1fr;
+  height: 700px; background: var(--bg1);
+  border: 1px solid var(--border); border-radius: var(--r12);
+  box-shadow: var(--sh2); overflow: hidden;
+  max-width: 1100px; margin: 0 auto;
+}
+
+/* ═══ RAIL ═══ */
+.rail { display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+.rail-header { padding: 28px 22px 16px; border-bottom: 1px solid var(--border); }
+.rail-title { font-size: 14px; font-weight: 700; color: var(--fg0); letter-spacing: -.3px; }
+.rail-sub { font-size: 9px; color: var(--fg2); margin-top: 3px; }
+.nav { flex: 1; padding: 4px 0; overflow-y: auto; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 18px; cursor: pointer; color: var(--fg2);
+  font-size: 14px; border-left: 3px solid transparent;
+  transition: background .12s, color .12s; user-select: none;
+}
+.nav-item:hover { background: var(--bg2); color: var(--fg1); }
+.nav-item.active { background: var(--acc-dim); color: var(--acc-text); border-left: 2px solid var(--acc); font-weight: 600; }
+.ni-ico { width: 13px; text-align: center; font-size: 14px; opacity: .7; }
+.nav-item.active .ni-ico { opacity: 1; }
+
+/* ═══ INNER WRAP ═══ */
+.inner-wrap {
+  display: flex; margin: 12px 8px; background: var(--bg1);
+  border-radius: var(--r12); border: 1px solid var(--border);
+  box-shadow: var(--sh2); overflow: hidden;
+}
+
+/* ═══ SIDEBAR ═══ */
+.sb-sidebar {
+  width: 220px; flex-shrink: 0; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-search { padding: 14px 12px 10px; }
+.sb-search input {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2);
+  color: var(--fg0); padding: 6px 10px; border-radius: var(--r10);
+  font-size: 13px; font-family: inherit; outline: none; box-shadow: var(--sh);
+}
+.sb-search input::placeholder { color: var(--fg3); font-size: 12px; }
+.sb-tabs { display: flex; gap: 3px; padding: 0 10px 8px; flex-wrap: wrap; }
+.sb-tab {
+  padding: 4px 8px; border-radius: var(--r6); font-size: 12px;
+  cursor: pointer; color: var(--fg2); border: 1px solid transparent; transition: all .12s;
+}
+.sb-tab.active { background: var(--bg1); color: var(--fg0); font-weight: 600; border-color: var(--border); box-shadow: var(--sh); }
+.sb-list { flex: 1; overflow-y: auto; padding: 0 10px 10px; }
+.sb-item {
+  padding: 8px 10px; border-radius: var(--r8); cursor: pointer;
+  margin-bottom: 2px; transition: background .12s; border: 1px solid transparent;
+}
+.sb-item:hover { background: var(--bg1); }
+.sb-item.active { background: var(--bg1); border-color: var(--border); box-shadow: var(--sh); }
+.sb-item-title {
+  font-size: 12px; color: var(--fg0); font-weight: 500;
+  margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-item-meta { font-size: 11px; color: var(--fg3); display: flex; gap: 6px; align-items: center; }
+.sb-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+/* ═══ MAIN ═══ */
+.main-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.content-area { flex: 1; overflow-y: auto; padding: 18px 22px; }
+
+/* ═══ TODAY VIEW ═══ */
+.today-view { display: flex; flex-direction: column; gap: 14px; }
+.today-header { display: flex; align-items: flex-start; justify-content: space-between; }
+.today-date { font-size: 18px; font-weight: 700; color: var(--fg0); }
+.today-sub { font-size: 11px; color: var(--fg3); margin-top: 2px; }
+.today-encouragement {
+  font-size: 12px; color: var(--acc-text); background: var(--acc-dim);
+  padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: all .15s;
+}
+.today-encouragement:hover { background: var(--acc); color: #fff; }
+.today-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.today-card {
+  background: var(--bg1); border: 1px solid var(--border);
+  border-radius: var(--r12); padding: 14px 16px; box-shadow: var(--sh);
+}
+.today-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.today-card-title { font-size: 12px; font-weight: 600; color: var(--fg1); }
+.today-card-link { font-size: 10px; color: var(--acc-text); cursor: pointer; }
+
+/* Progress */
+.progress-card { display: flex; align-items: center; gap: 18px; }
+.progress-ring-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+.progress-ring { width: 80px; height: 80px; }
+.progress-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.progress-pct { font-size: 18px; font-weight: 700; color: var(--fg0); }
+.progress-info { display: flex; flex-direction: column; gap: 2px; }
+.progress-emoji { font-size: 20px; }
+.progress-text { font-size: 14px; font-weight: 600; }
+.progress-detail { font-size: 11px; color: var(--fg2); }
+.progress-diff { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+/* Task items (exact match with TaskList.vue) */
+.task-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 10px 9px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; position: relative; transition: background .12s, border-radius .12s;
+}
+.task-item:last-child { border-bottom: none; }
+.task-item:hover {
+  background: var(--bg2); border-radius: var(--r8);
+  border-bottom-color: transparent; margin: 0 -8px; padding-left: 8px; padding-right: 8px;
+}
+.task-pri-bar { width: 3px; border-radius: 2px; flex-shrink: 0; margin-top: 2px; align-self: stretch; min-height: 16px; }
+.task-check {
+  width: 15px; height: 15px; border: 1.5px solid var(--border3);
+  border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.task-check.done { background: var(--ok); border-color: var(--ok); }
+.task-check.done::after {
+  content: ''; width: 7px; height: 4px;
+  border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px); display: block;
+}
+.task-text { font-size: 13px; color: var(--fg1); flex: 1; line-height: 1.4; }
+.task-text.done { text-decoration: line-through; color: var(--fg3); }
+
+/* Task detail / subtasks */
+.task-detail { padding: 10px 12px; border-top: 1px solid var(--border); font-size: 11px; }
+.subtask-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; font-size: 11px; }
+.subtask-check {
+  width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center; font-size: 8px;
+  background: transparent; color: transparent; flex-shrink: 0; transition: all .15s; cursor: pointer;
+}
+.subtask-check.done { border-color: var(--ok); background: var(--ok); color: #fff; }
+.subtask-text { flex: 1; color: var(--fg1); }
+.subtask-text.done { color: var(--fg3); text-decoration: line-through; }
+.tb-btn {
+  background: none; border: 1px solid var(--border); color: var(--fg2);
+  padding: 3px 8px; border-radius: 4px; font-size: 11px; transition: all .12s;
+}
+.tb-btn:hover { background: var(--bg2); color: var(--fg0); }
+
+/* Task input (capsule) */
+.task-input-wrap {
+  display: flex; margin-top: 10px; background: var(--bg2);
+  border-radius: 20px; padding: 6px 10px 6px 14px;
+  align-items: center; border: 1px solid var(--border2); transition: border-color .15s, box-shadow .15s;
+}
+.task-input-wrap:focus-within { border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+.task-input-wrap input {
+  flex: 1; background: transparent; border: none; outline: none; font-size: 13px; color: var(--fg0);
+}
+.task-input-wrap input::placeholder { color: var(--fg3); }
+.task-input-btn {
+  background: var(--acc); color: #fff; border: none; border-radius: 16px;
+  padding: 5px 14px; font-size: 12px; font-weight: 500; cursor: pointer;
+  opacity: 0; transform: scale(.85); transition: opacity .15s, transform .15s; pointer-events: none;
+}
+.task-input-wrap:focus-within .task-input-btn { opacity: 1; transform: scale(1); pointer-events: auto; }
+
+/* Calendar */
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-label { font-size: 12px; font-weight: 600; color: var(--fg1); }
+.cal-nav { display: flex; gap: 4px; }
+.cal-nav-btn {
+  background: var(--bg1); border: 1px solid var(--border2); color: var(--fg1);
+  width: 26px; height: 26px; border-radius: var(--r6); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; box-shadow: var(--sh);
+}
+.cal-wd { text-align: center; font-size: 11px; color: var(--fg3); font-weight: 600; padding: 3px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-cell {
+  background: var(--bg1); border: 1px solid var(--border); border-radius: var(--r6);
+  padding: 4px 5px; cursor: pointer; transition: border-color .12s; min-height: 38px;
+}
+.cal-cell:hover { border-color: var(--border2); }
+.cal-cell.today { border-color: var(--acc); border-width: 1.5px; }
+.cal-cell.selected { background: var(--acc-dim); border-color: var(--acc); }
+.cal-cell.other-month { opacity: .35; pointer-events: none; }
+.cal-num { font-size: 10px; font-weight: 600; color: var(--fg0); line-height: 1; }
+.cal-today-badge {
+  display: inline-flex; width: 15px; height: 15px; background: var(--acc);
+  border-radius: 50%; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; color: #fff;
+}
+.cal-event { font-size: 10px; color: var(--fg2); display: flex; align-items: baseline; gap: 2px; }
+.cal-ev-dot { width: 3px; height: 3px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+
+/* Milestones */
+.ms-list { position: relative; display: flex; flex-direction: column; padding-left: 18px; }
+.ms-list::before {
+  content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px;
+  width: 1px; background: var(--border2);
+}
+.ms-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; cursor: pointer; position: relative; }
+.ms-row:hover { opacity: .85; }
+.ms-node {
+  width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0;
+  margin-top: 1px; margin-left: -18px; border: 2px solid;
+  transition: all .15s; position: relative; z-index: 1; background: var(--bg1);
+}
+.ms-node.done { background: var(--ok); border-color: var(--ok); }
+.ms-node.active { background: var(--acc); border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-dim); }
+.ms-node.pending { border-color: var(--border2); background: var(--bg1); }
+.ms-content { flex: 1; min-width: 0; }
+.ms-title { font-size: 12px; color: var(--fg1); line-height: 1.4; font-weight: 500; }
+.ms-title.done { text-decoration: line-through; color: var(--fg3); }
+.ms-title.active { color: var(--fg0); font-weight: 600; }
+.ms-tag { font-size: 10px; color: var(--fg3); }
+.ms-tag.active { color: var(--acc-text); }
+.ms-tag.done { color: var(--ok); }
+.ms-sub { padding: 4px 0 4px 4px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg2); }
+.ms-sub-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+
+/* Health */
+.health-quick { display: flex; align-items: center; gap: 14px; }
+.health-score { font-size: 36px; font-weight: 700; line-height: 1; }
+.health-metrics { display: flex; flex-direction: column; gap: 4px; }
+.health-metric { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--fg1); }
+
+/* Journal */
+.today-journal-preview { display: flex; align-items: flex-start; gap: 10px; }
+.today-journal-mood { font-size: 24px; flex-shrink: 0; }
+.today-journal-text { font-size: 12px; color: var(--fg2); line-height: 1.5; }
+
+/* Quick actions */
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 12px; }
+.quick-btn {
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r8);
+  cursor: pointer; font-size: 11px; color: var(--fg1); font-family: inherit; transition: all .12s;
+}
+.quick-btn:hover { background: var(--acc-dim); border-color: var(--acc); color: var(--acc-text); }
+.quick-icon { font-size: 14px; }
+
+/* Projects */
+.today-project-list { display: flex; flex-direction: column; gap: 6px; }
+.today-project-item { display: flex; flex-direction: column; gap: 1px; padding: 6px 8px; background: var(--bg2); border-radius: var(--r6); }
+.today-project-name { font-size: 12px; font-weight: 600; color: var(--fg0); }
+.today-project-ms { font-size: 10px; color: var(--acc-text); }
+
+/* ═══ TOAST ═══ */
+.toast-container {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast-item {
+  background: var(--bg1); border: 1px solid var(--border);
+  border-radius: var(--r12); padding: 12px 18px;
+  box-shadow: var(--sh2); font-size: 13px; color: var(--fg1);
+  display: flex; align-items: center; gap: 10px;
+  pointer-events: auto; cursor: pointer; max-width: 320px;
+  animation: toast-in .35s cubic-bezier(.21,1.02,.73,1) forwards;
+}
+.toast-item.streak { border-color: var(--warn); background: linear-gradient(135deg, var(--bg1), var(--warn-bg)); }
+.toast-item.toast-out { animation: toast-out .25s cubic-bezier(.4,0,1,1) forwards; }
+.toast-emoji { font-size: 20px; flex-shrink: 0; }
+.toast-text { flex: 1; line-height: 1.4; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(16px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toast-out { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(-8px) scale(.95); } }
+
+/* View switcher */
+.view-tabs { display: flex; gap: 2px; margin-bottom: 12px; }
+.view-tab {
+  padding: 5px 12px; border-radius: var(--r6); font-size: 11px; cursor: pointer;
+  background: var(--bg2); color: var(--fg2); border: 1px solid transparent; transition: all .12s;
+}
+.view-tab.active { background: var(--acc-dim); color: var(--acc-text); border-color: var(--acc); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="preview-header">
+  <div class="preview-title">Personal OS — UI Preview</div>
+  <div class="preview-sub">与实际 app 完全一致的设计系统 · 点击任务勾选框看 toast · 切换主题看三种配色</div>
+  <div class="theme-bar">
+    <button class="theme-btn active" onclick="setTheme('light',this)">☀️ 亮色</button>
+    <button class="theme-btn" onclick="setTheme('dark',this)">🌙 暗色</button>
+    <button class="theme-btn" onclick="setTheme('green',this)">🌿 绿色</button>
+    <button class="theme-btn demo-btn" onclick="demoToast()">🔔 演示 Toast</button>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- ═══ RAIL ═══ -->
+  <div class="rail">
+    <div class="rail-header">
+      <div class="rail-title">Personal OS</div>
+      <div class="rail-sub">v15 · Vue</div>
+    </div>
+    <div class="nav">
+      <div class="nav-item active" onclick="switchView('today',this)"><span class="ni-ico">🏠</span><span>今天</span></div>
+      <div class="nav-item" onclick="switchView('todo',this)"><span class="ni-ico">✅</span><span>待办</span></div>
+      <div class="nav-item"><span class="ni-ico">✍️</span><span>随心记</span></div>
+      <div class="nav-item" onclick="switchView('project',this)"><span class="ni-ico">📋</span><span>项目</span></div>
+      <div class="nav-item"><span class="ni-ico">🕐</span><span>时间线</span></div>
+      <div class="nav-item" onclick="switchView('health',this)"><span class="ni-ico">💪</span><span>健康</span></div>
+      <div class="nav-item"><span class="ni-ico">🎨</span><span>素材</span></div>
+      <div class="nav-item"><span class="ni-ico">🤖</span><span>AI</span></div>
+      <div class="nav-item"><span class="ni-ico">⚙️</span><span>设置</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ INNER WRAP ═══ -->
+  <div class="inner-wrap">
+    <!-- Sidebar -->
+    <div class="sb-sidebar">
+      <div class="sb-search"><input type="text" placeholder="搜索…" /></div>
+      <div class="sb-tabs">
+        <div class="sb-tab active">工作</div>
+        <div class="sb-tab">设计</div>
+        <div class="sb-tab">个人</div>
+        <div class="sb-tab">娱乐</div>
+        <div class="sb-tab">已完成</div>
+      </div>
+      <div class="sb-list">
+        <div class="sb-item active">
+          <div class="sb-item-title">完成 Personal OS toast 功能</div>
+          <div class="sb-item-meta"><span class="sb-dot" style="background:var(--danger)"></span><span>4月26日 · 高</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-title">整理 Obsidian 笔记结构</div>
+          <div class="sb-item-meta"><span class="sb-dot" style="background:var(--warn)"></span><span>4月26日 · 中</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-title">设计新一期谷子配色</div>
+          <div class="sb-item-meta"><span class="sb-dot" style="background:var(--purple)"></span><span>4月27日 · 高</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-title">跑步 30 分钟</div>
+          <div class="sb-item-meta"><span class="sb-dot" style="background:var(--ok)"></span><span>4月26日 · 低</span></div>
+        </div>
+        <div class="sb-item">
+          <div class="sb-item-title">回复客户邮件</div>
+          <div class="sb-item-meta"><span class="sb-dot" style="background:var(--danger)"></span><span>4月25日 · 高</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="main-panel">
+      <div class="content-area" id="contentArea">
+
+        <!-- ═══ TODAY VIEW ═══ -->
+        <div id="view-today" class="today-view">
+          <div class="today-header">
+            <div>
+              <div class="today-date">4月26日 周六</div>
+              <div class="today-sub">Personal OS</div>
+            </div>
+            <div class="today-encouragement" onclick="this.textContent=randomEnc()">慢慢来，比较快。</div>
+          </div>
+          <div class="today-grid">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <!-- Progress -->
+              <div class="today-card progress-card">
+                <div class="progress-ring-wrap">
+                  <svg class="progress-ring" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="34" fill="none" stroke="var(--bg3)" stroke-width="6"/>
+                    <circle id="ring" cx="40" cy="40" r="34" fill="none" stroke="var(--ok)" stroke-width="6"
+                      stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="85.4"
+                      transform="rotate(-90 40 40)" style="transition:stroke-dashoffset .6s"/>
+                  </svg>
+                  <div class="progress-center"><div class="progress-pct" id="pctText">60%</div></div>
+                </div>
+                <div class="progress-info">
+                  <div class="progress-emoji">💪</div>
+                  <div class="progress-text" style="color:var(--warn)">还行，继续加油</div>
+                  <div class="progress-detail" id="progressDetail">完成 3/5 个任务</div>
+                  <div class="progress-diff"><span style="color:var(--ok)">↑12 分</span><span style="color:var(--fg3);font-weight:400;margin-left:4px">较昨日</span></div>
+                </div>
+              </div>
+              <!-- Tasks -->
+              <div class="today-card">
+                <div class="today-card-header">
+                  <div class="today-card-title">📋 今日待办</div>
+                  <span class="today-card-link">查看全部 →</span>
+                </div>
+                <div id="todayTaskList">
+                  <div class="task-item" data-idx="0">
+                    <div class="task-pri-bar" style="background:var(--danger)"></div>
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">完成 Personal OS toast 功能</div>
+                    <span style="font-size:10px;color:var(--fg3);flex-shrink:0">4月26日</span>
+                  </div>
+                  <div class="task-item" data-idx="1">
+                    <div class="task-pri-bar" style="background:var(--warn)"></div>
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">整理 Obsidian 笔记结构</div>
+                    <span style="font-size:10px;color:var(--fg3);flex-shrink:0">4月26日</span>
+                  </div>
+                  <div class="task-item" data-idx="2">
+                    <div class="task-pri-bar" style="background:var(--ok)"></div>
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">跑步 30 分钟</div>
+                    <span style="font-size:10px;color:var(--fg3);flex-shrink:0">4月26日</span>
+                  </div>
+                  <div class="task-item" data-idx="3">
+                    <div class="task-pri-bar" style="background:var(--acc)"></div>
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">回复客户邮件</div>
+                    <span style="font-size:10px;color:var(--fg3);flex-shrink:0">4月26日</span>
+                  </div>
+                  <div class="task-item" data-idx="4">
+                    <div class="task-pri-bar" style="background:var(--purple)"></div>
+                    <div class="task-check" onclick="toggleTask(this)"></div>
+                    <div class="task-text">设计新一期谷子配色方案</div>
+                    <span style="font-size:10px;color:var(--fg3);flex-shrink:0">4月27日</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <!-- Health -->
+              <div class="today-card">
+                <div class="today-card-header">
+                  <div class="today-card-title">💪 健康</div>
+                  <span class="today-card-link">详情 →</span>
+                </div>
+                <div class="health-quick">
+                  <div class="health-score" style="color:var(--warn)">72</div>
+                  <div class="health-metrics">
+                    <div class="health-metric"><span>💧</span><span>5/8 杯</span></div>
+                    <div class="health-metric"><span>🏃</span><span>20/30 分钟</span></div>
+                    <div class="health-metric"><span>😴</span><span>6.5/8 小时</span></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Journal -->
+              <div class="today-card">
+                <div class="today-card-header">
+                  <div class="today-card-title">✍️ 今日随心记</div>
+                  <span class="today-card-link">写一篇 →</span>
+                </div>
+                <div class="today-journal-preview">
+                  <div class="today-journal-mood">😊</div>
+                  <div class="today-journal-text">今天心情不错，把 Personal OS 的代码整理了一下，准备开始加新功能……</div>
+                </div>
+              </div>
+              <!-- Projects -->
+              <div class="today-card">
+                <div class="today-card-header">
+                  <div class="today-card-title">🔥 进行中的项目</div>
+                  <span class="today-card-link">查看全部 →</span>
+                </div>
+                <div class="today-project-list">
+                  <div class="today-project-item">
+                    <span class="today-project-name">Personal OS</span>
+                    <span class="today-project-ms">待办 + 日历模块</span>
+                  </div>
+                  <div class="today-project-item">
+                    <span class="today-project-name">Obsidian 知识库</span>
+                    <span class="today-project-ms">孤立笔记整理</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Quick actions -->
+              <div class="today-card quick-actions">
+                <button class="quick-btn"><span class="quick-icon">✅</span><span>添加待办</span></button>
+                <button class="quick-btn"><span class="quick-icon">✍️</span><span>写日记</span></button>
+                <button class="quick-btn"><span class="quick-icon">🍅</span><span>开始专注</span></button>
+                <button class="quick-btn"><span class="quick-icon">📋</span><span>看项目</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TODO VIEW (hidden by default) ═══ -->
+        <div id="view-todo" class="today-view" style="display:none">
+          <!-- Calendar -->
+          <div class="today-card" style="padding:12px 14px;">
+            <div class="cal-header">
+              <div class="cal-label">2026年 4月</div>
+              <div class="cal-nav">
+                <button class="cal-nav-btn">‹</button>
+                <button class="cal-nav-btn">›</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin-bottom:4px;">
+              <div class="cal-wd">一</div><div class="cal-wd">二</div><div class="cal-wd">三</div>
+              <div class="cal-wd">四</div><div class="cal-wd">五</div><div class="cal-wd">六</div><div class="cal-wd">日</div>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+          <!-- Task list -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;">
+            <div class="today-card" style="display:flex;flex-direction:column;">
+              <div class="card-title" style="font-size:11px;font-weight:600;color:var(--fg2);letter-spacing:.4px;margin-bottom:8px;">工作 · 3 项</div>
+              <div style="flex:1;">
+                <div class="task-item"><div class="task-pri-bar" style="background:var(--danger)"></div><div class="task-check"></div><div class="task-text">完成 Personal OS toast 功能</div></div>
+                <div class="task-item"><div class="task-pri-bar" style="background:var(--warn)"></div><div class="task-check"></div><div class="task-text">整理 Obsidian 笔记结构</div></div>
+                <div class="task-item"><div class="task-pri-bar" style="background:var(--acc)"></div><div class="task-check"></div><div class="task-text">回复客户邮件</div></div>
+              </div>
+              <div class="task-input-wrap"><input placeholder="添加待办…" /><button class="task-input-btn">添加</button></div>
+            </div>
+            <div class="today-card">
+              <div class="card-title" style="font-size:11px;font-weight:600;color:var(--fg2);letter-spacing:.4px;margin-bottom:8px;">4月26日 · 3 项</div>
+              <div class="task-item"><div class="task-pri-bar" style="background:var(--danger)"></div><div class="task-check"></div><div class="task-text">完成 Personal OS toast 功能</div></div>
+              <div class="task-item"><div class="task-pri-bar" style="background:var(--warn)"></div><div class="task-check"></div><div class="task-text">整理 Obsidian 笔记结构</div></div>
+              <div class="task-item"><div class="task-pri-bar" style="background:var(--ok)"></div><div class="task-check"></div><div class="task-text">跑步 30 分钟</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ PROJECT VIEW (hidden by default) ═══ -->
+        <div id="view-project" class="today-view" style="display:none">
+          <div class="today-header">
+            <div>
+              <div class="today-date">Personal OS</div>
+              <div class="today-sub">进行中 · 预计6月 · 35%</div>
+            </div>
+          </div>
+          <div class="today-card">
+            <div class="today-card-header">
+              <div class="today-card-title">🏁 里程碑</div>
+            </div>
+            <div class="ms-list">
+              <div class="ms-row">
+                <div class="ms-node done"></div>
+                <div class="ms-content">
+                  <div class="ms-title done">UI 框架原型</div>
+                  <div class="ms-tag done">✓ 已完成</div>
+                </div>
+              </div>
+              <div class="ms-row">
+                <div class="ms-node active"></div>
+                <div class="ms-content">
+                  <div class="ms-title active">待办 + 日历模块</div>
+                  <div class="ms-tag active">进行中</div>
+                  <div class="ms-sub"><span class="ms-sub-dot"></span>数据层接入</div>
+                  <div class="ms-sub"><span class="ms-sub-dot"></span>日历格子事项联动</div>
+                </div>
+              </div>
+              <div class="ms-row">
+                <div class="ms-node pending"></div>
+                <div class="ms-content">
+                  <div class="ms-title">日记 + 健康模块</div>
+                  <div class="ms-tag">待开始</div>
+                </div>
+              </div>
+              <div class="ms-row">
+                <div class="ms-node pending"></div>
+                <div class="ms-content">
+                  <div class="ms-title">AI 集成</div>
+                  <div class="ms-tag">待开始</div>
+                </div>
+              </div>
+              <div class="ms-row">
+                <div class="ms-node pending"></div>
+                <div class="ms-content">
+                  <div class="ms-title">数据导入导出</div>
+                  <div class="ms-tag">待开始</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ HEALTH VIEW (hidden by default) ═══ -->
+        <div id="view-health" class="today-view" style="display:none">
+          <div class="today-header">
+            <div>
+              <div class="today-date">健康概览</div>
+              <div class="today-sub">综合评分 72 分</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+            <div class="today-card" style="text-align:center;">
+              <div style="font-size:11px;color:var(--fg2);margin-bottom:4px;">💧 水分</div>
+              <div style="font-size:24px;font-weight:700;color:var(--acc)">5/8</div>
+              <div style="height:4px;background:var(--bg3);border-radius:2px;margin-top:8px;"><div style="height:100%;width:62%;background:var(--acc);border-radius:2px;"></div></div>
+            </div>
+            <div class="today-card" style="text-align:center;">
+              <div style="font-size:11px;color:var(--fg2);margin-bottom:4px;">🏃 运动</div>
+              <div style="font-size:24px;font-weight:700;color:var(--ok)">20/30</div>
+              <div style="height:4px;background:var(--bg3);border-radius:2px;margin-top:8px;"><div style="height:100%;width:66%;background:var(--ok);border-radius:2px;"></div></div>
+            </div>
+            <div class="today-card" style="text-align:center;">
+              <div style="font-size:11px;color:var(--fg2);margin-bottom:4px;">😴 睡眠</div>
+              <div style="font-size:24px;font-weight:700;color:var(--purple)">6.5/8</div>
+              <div style="height:4px;background:var(--bg3);border-radius:2px;margin-top:8px;"><div style="height:100%;width:81%;background:var(--purple);border-radius:2px;"></div></div>
+            </div>
+            <div class="today-card" style="text-align:center;">
+              <div style="font-size:11px;color:var(--fg2);margin-bottom:4px;">🎯 专注</div>
+              <div style="font-size:24px;font-weight:700;color:var(--warn)">90/120</div>
+              <div style="height:4px;background:var(--bg3);border-radius:2px;margin-top:8px;"><div style="height:100%;width:75%;background:var(--warn);border-radius:2px;"></div></div>
+            </div>
+            <div class="today-card" style="text-align:center;">
+              <div style="font-size:11px;color:var(--fg2);margin-bottom:4px;">🧘 冥想</div>
+              <div style="font-size:24px;font-weight:700;color:var(--fg3)">0/20</div>
+              <div style="height:4px;background:var(--bg3);border-radius:2px;margin-top:8px;"><div style="height:100%;width:0%;background:var(--fg3);border-radius:2px;"></div></div>
+            </div>
+            <div class="today-card" style="text-align:center;">
+              <div style="font-size:11px;color:var(--fg2);margin-bottom:4px;">📊 综合</div>
+              <div style="font-size:24px;font-weight:700;color:var(--warn)">72</div>
+              <div style="height:4px;background:var(--bg3);border-radius:2px;margin-top:8px;"><div style="height:100%;width:72%;background:var(--warn);border-radius:2px;"></div></div>
+            </div>
+          </div>
+          <div class="today-card" style="margin-top:4px;">
+            <div class="today-card-title" style="margin-bottom:6px;">🤖 AI 建议</div>
+            <div style="font-size:12px;color:var(--fg2);line-height:1.6;">水分摄入还差 3 杯达标。运动时间还差 10 分钟。睡眠充足。专注时间出色。今日状态尚可，继续加油。</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const ENCOURAGEMENTS = [
+  '今天也是元气满满的一天！','专注的你最有魅力。','完成比完美更重要。',
+  '每一步都算数，别小看自己。','你已经比昨天的自己更棒了。','别忘了喝水 💧',
+  '休息一下也没关系，你值得。','坚持本身就是一种能力。','今天做的事，未来的你会感谢。',
+  '能坐下来开始，就已经赢了一半。','慢慢来，比较快。','你的努力不会白费。',
+  '做自己喜欢的事，本身就是奖励。','保持节奏，别急。','今天的目标不难，你做得到。',
+]
+function randomEnc() { return ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)] }
+
+// Toast
+let toastId = 0, streakCount = 0, streakTimer = null
+function showToast(text, emoji = '✨', isStreak = false) {
+  const c = document.getElementById('toastContainer')
+  const id = 't' + (++toastId)
+  const el = document.createElement('div')
+  el.id = id; el.className = 'toast-item' + (isStreak ? ' streak' : '')
+  el.innerHTML = `<span class="toast-emoji">${emoji}</span><span class="toast-text">${text}</span>`
+  el.onclick = () => dismissToast(id)
+  c.appendChild(el)
+  setTimeout(() => dismissToast(id), 3500)
+}
+function dismissToast(id) {
+  const el = document.getElementById(id); if (!el) return
+  el.classList.add('toast-out'); setTimeout(() => el.remove(), 250)
+}
+
+// Task toggle with toast
+function toggleTask(checkEl) {
+  const item = checkEl.closest('.task-item')
+  const textEl = item.querySelector('.task-text')
+  if (checkEl.classList.contains('done')) {
+    checkEl.classList.remove('done'); textEl.classList.remove('done')
+  } else {
+    checkEl.classList.add('done'); textEl.classList.add('done')
+    // Trigger toast
+    if (streakTimer) clearTimeout(streakTimer)
+    streakCount++
+    streakTimer = setTimeout(() => { streakCount = 0 }, 3000)
+    if (streakCount >= 3) {
+      showToast('三连击！🔥 你今天状态超棒！', '🔥', true)
+      streakCount = 0
+    } else {
+      showToast(randomEnc(), '✨')
+    }
+    // Update progress
+    updateProgress()
+  }
+}
+
+function updateProgress() {
+  const checks = document.querySelectorAll('#todayTaskList .task-check')
+  const total = checks.length
+  const done = document.querySelectorAll('#todayTaskList .task-check.done').length
+  const pct = total ? Math.round(done / total * 100) : 0
+  document.getElementById('pctText').textContent = pct + '%'
+  document.getElementById('progressDetail').textContent = `完成 ${done}/${total} 个任务`
+  const circumference = 2 * Math.PI * 34
+  document.getElementById('ring').style.strokeDashoffset = circumference * (1 - pct / 100)
+}
+
+function demoToast() {
+  showToast('完成比完美更重要。', '✨')
+  setTimeout(() => showToast('专注的你最有魅力。', '💪'), 800)
+  setTimeout(() => showToast('三连击！🔥 你今天状态超棒！', '🔥', true), 1600)
+}
+
+// Theme
+function setTheme(t, btn) {
+  document.documentElement.classList.remove('dark', 'theme-green')
+  if (t === 'dark') document.documentElement.classList.add('dark')
+  if (t === 'green') document.documentElement.classList.add('theme-green')
+  document.querySelectorAll('.theme-btn:not(.demo-btn)').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+}
+
+// View switcher
+function switchView(view, navItem) {
+  document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none')
+  document.getElementById('view-' + view).style.display = ''
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+  navItem.classList.add('active')
+}
+
+// Calendar grid
+(function buildCal() {
+  const grid = document.getElementById('calGrid')
+  const firstDay = new Date(2026, 3, 1).getDay() // 0=Sun
+  const daysInMonth = 30
+  const offset = firstDay === 0 ? 6 : firstDay - 1 // Mon-based
+  let html = ''
+  // Previous month padding
+  const prevDays = new Date(2026, 3, 0).getDate()
+  for (let i = offset - 1; i >= 0; i--)
+    html += `<div class="cal-cell other-month"><div class="cal-num">${prevDays - i}</div></div>`
+  // This month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === 26
+    const isSelected = d === 26
+    html += `<div class="cal-cell${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}">`
+    html += isToday ? `<div class="cal-today-badge">${d}</div>` : `<div class="cal-num">${d}</div>`
+    if (d === 26) html += `<div class="cal-event"><span class="cal-ev-dot" style="background:var(--danger)"></span>3项待办</div>`
+    if (d === 28) html += `<div class="cal-event"><span class="cal-ev-dot" style="background:var(--purple)"></span>谷子截稿</div>`
+    html += '</div>'
+  }
+  // Next month padding
+  const total = offset + daysInMonth
+  const remaining = (Math.ceil(total / 7) * 7) - total
+  for (let i = 1; i <= remaining; i++)
+    html += `<div class="cal-cell other-month"><div class="cal-num">${i}</div></div>`
+  grid.innerHTML = html
+})()
+</script>
+
+</body>
+</html>
